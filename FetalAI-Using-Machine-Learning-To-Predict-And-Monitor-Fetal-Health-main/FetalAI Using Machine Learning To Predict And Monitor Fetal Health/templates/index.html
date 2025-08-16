@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fetal Health Predictor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #e0f7fa, #e1bee7);
+    min-height: 100vh;
+  }
+  /* Navbar */
+  .navbar {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  .navbar-brand {
+    font-weight: 700;
+    color: #4a148c !important;
+  }
+  /* Sidebar */
+  .sidebar {
+    background: rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding-top: 1rem;
+    height: 100%;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    width: 220px;
+    transition: all 0.3s ease;
+  }
+  .sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: #4a148c;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 8px;
+    margin: 5px 10px;
+  }
+  .sidebar a.active,
+  .sidebar a:hover {
+    background-color: #4a148c;
+    color: white;
+  }
+  /* Main content */
+  .main-content {
+    margin-left: 220px;
+    padding: 2rem;
+    transition: margin-left 0.3s ease;
+  }
+  @media (max-width: 768px) {
+    .sidebar {
+      transform: translateX(-100%);
+    }
+    .sidebar.show {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+    }
+  }
+  /* Cards */
+  .glass-card {
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  /* Animation */
+  @keyframes fadeIn {
+    from {opacity: 0; transform: translateY(10px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+  /* Content tabs */
+  .content-tab {
+    display: none;
+  }
+  .content-tab.active {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg fixed-top">
+  <div class="container-fluid">
+    <button class="btn btn-outline-primary d-lg-none me-2" id="menuToggle">☰</button>
+    <a class="navbar-brand" href="#">FetalAI</a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <a class="btn btn-primary" onclick="showTab('contactTab')">📞 Contact Us</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <a href="#" class="active" onclick="showTab('homeTab')">🏠 Home</a>
+  <a href="#" onclick="showTab('uploadTab')">📄 Upload CSV</a>
+  <a href="#" onclick="showTab('manualTab')">✍️ Manual Input</a>
+  <a href="#" onclick="showTab('contactTab')">📞 Contact Us</a>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+
+  <!-- Home Tab -->
+  <div id="homeTab" class="content-tab active">
+    <div class="glass-card text-center mt-5">
+      <h1 class="mb-4">Welcome to Fetal Health Prediction</h1>
+      <img src="https://th.bing.com/th/id/OIP.woZ5jn9-uoVZzGDjjguUiQHaFN?w=253&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3" 
+           alt="Fetal Health" class="img-fluid rounded shadow" style="max-height: 400px;">
+    </div>
+  </div>
+
+  <!-- Upload CSV Tab -->
+  <div id="uploadTab" class="content-tab">
+    <div class="glass-card mt-5">
+      <h4>📄 Upload CSV</h4>
+      <form action="/predict" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <input type="file" name="csv_file" accept=".csv" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Predict from CSV</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manual Input Tab -->
+  <div id="manualTab" class="content-tab">
+    <div class="glass-card mt-5">
+      <h4>✍️ Manual Input</h4>
+      <div class="mb-3">
+        <label class="form-label">Select Baseline</label>
+        <select id="baselineSelect" class="form-select" onchange="fillBaseline(this.value)">
+          <option value="">-- Choose --</option>
+          {% for label, values in baselines.items() %}
+            <option value="{{ values|join(',') }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <form action="/predict" method="post" id="manualForm">
+        <div class="row">
+          {% for field in feature_names %}
+            <div class="col-md-4 mb-3">
+              <label class="form-label">{{ field.replace('_', ' ').capitalize() }}</label>
+              <input type="number" step="any" name="{{ field }}" id="{{ field }}" class="form-control" required>
+            </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-success">Predict Manually</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contact Tab -->
+  <div id="contactTab" class="content-tab">
+    <div class="glass-card mt-5">
+      <h4>📞 Contact Us</h4>
+      <p>If you have any questions or feedback, feel free to reach out:</p>
+      <ul>
+        <li>Email: support@fetalai.com</li>
+        <li>Phone: +91-9876543210</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(tabId) {
+  document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+
+  document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+  const activeLink = [...document.querySelectorAll('.sidebar a')].find(link => link.getAttribute('onclick').includes(tabId));
+  if (activeLink) activeLink.classList.add('active');
+}
+
+function fillBaseline(valuesStr) {
+  if (!valuesStr) return;
+  const values = valuesStr.split(',');
+  const fields = {{ feature_names|tojson }};
+  fields.forEach((name, i) => {
+    const input = document.getElementById(name);
+    if (input) input.value = values[i];
+  });
+}
+
+document.getElementById('menuToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('show');
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
